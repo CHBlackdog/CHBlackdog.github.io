@@ -1,0 +1,857 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Android,Universal-image-loader," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="CHBlackdog-翦" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="Android项目中经常用到了异步加载框架Universal-image-loader，有三级缓存（实际上只有两级，网络不算）：内存，文件。用了很久却不知道其原理，最近有时间来看下其执行原理到底是什么。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Universal-image-loader源码解读">
+<meta property="og:url" content="https://chblackdog.github.io/2017/03/02/image-loader-source/index.html">
+<meta property="og:site_name" content="CHBlackdog-翦">
+<meta property="og:description" content="Android项目中经常用到了异步加载框架Universal-image-loader，有三级缓存（实际上只有两级，网络不算）：内存，文件。用了很久却不知道其原理，最近有时间来看下其执行原理到底是什么。">
+<meta property="og:updated_time" content="2017-03-02T03:14:11.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Universal-image-loader源码解读">
+<meta name="twitter:description" content="Android项目中经常用到了异步加载框架Universal-image-loader，有三级缓存（实际上只有两级，网络不算）：内存，文件。用了很久却不知道其原理，最近有时间来看下其执行原理到底是什么。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: 'T0M4JM9VZ6',
+      apiKey: 'd5c20da1859a38a283f2ebac47a8d26b',
+      indexName: 'Blog_CHBlackdog',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://chblackdog.github.io/2017/03/02/image-loader-source/"/>
+
+
+
+
+
+  <title> Universal-image-loader源码解读 | CHBlackdog-翦 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?760d38d4c1e3d4555c7d082753dc3423";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">CHBlackdog-翦</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  
+  <div class="algolia-popup popup">
+    <div class="algolia-search">
+      <div class="algolia-search-input-icon">
+        <i class="fa fa-search"></i>
+      </div>
+      <div class="algolia-search-input" id="algolia-search-input"></div>
+    </div>
+
+    <div class="algolia-results">
+      <div id="algolia-stats"></div>
+      <div id="algolia-hits"></div>
+      <div id="algolia-pagination" class="algolia-pagination"></div>
+    </div>
+
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+  </div>
+
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://chblackdog.github.io/2017/03/02/image-loader-source/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="CHBlackdog">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="CHBlackdog-翦">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Universal-image-loader源码解读
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-02T10:48:56+08:00">
+                2017-03-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android源码/" itemprop="url" rel="index">
+                    <span itemprop="name">Android源码</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/03/02/image-loader-source/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/03/02/image-loader-source/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Android项目中经常用到了异步加载框架Universal-image-loader，有三级缓存（实际上只有两级，网络不算）：内存，文件。用了很久却不知道其原理，最近有时间来看下其执行原理到底是什么。</p>
+<a id="more"></a>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>首先Universal-image-loader的用法很简单，首先是配置：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">ImageLoaderConfiguration.Builder configBuilder = <span class="keyword">new</span> ImageLoaderConfiguration.Builder(context);</div><div class="line">configBuilder.diskCacheSize(<span class="number">50</span> * <span class="number">1024</span> * <span class="number">1024</span>); <span class="comment">// 50 MiB 文件缓存大小</span></div><div class="line"><span class="comment">//或者使用ImageLoaderConfiguration.createDefault(context);使用默认配置</span></div><div class="line">ImageLoader.getInstance().init(configBuilder.build());</div></pre></td></tr></table></figure></p>
+<p>然后是使用，有三种方法可以使用：</p>
+<ol>
+<li>displayImage</li>
+<li>loadImage （只加载图片而不显示）</li>
+<li>loadImageSync （异步加载）<br>不管用哪种方法，最终都使用了<br>displayImage(String uri, ImageAware imageAware, DisplayImageOptions options,ImageSize targetSize, ImageLoadingListener listener, ImageLoadingProgressListener progressListener)这个方法</li>
+</ol>
+<ul>
+<li>ImageAware：图片容器</li>
+<li>DisplayImageOptions：图片显示参数设置</li>
+<li>ImageSize：图片大小</li>
+<li>ImageLoadingListener：图片加载动作监听</li>
+<li>ImageLoadingProgressListener：加载进度监听<h3 id="类解析"><a href="#类解析" class="headerlink" title="类解析"></a>类解析</h3>分析之前先了解一下各个类<h4 id="ImageAware"><a href="#ImageAware" class="headerlink" title="ImageAware"></a>ImageAware</h4>这是一个接口，相当于图片容器，提供了所有加载/显示图片所需要的方法(如获取容器的长宽等）。一般使用<strong>ImageViewAware</strong>，继承自<strong>ViewAware</strong>,来看下它的构造方法<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="title">ViewAware</span><span class="params">(View view, <span class="keyword">boolean</span> checkActualViewSize)</span> </span>&#123;</div><div class="line">   <span class="keyword">if</span> (view == <span class="keyword">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"view must not be null"</span>);</div><div class="line">   <span class="keyword">this</span>.viewRef = <span class="keyword">new</span> WeakReference&lt;View&gt;(view);</div><div class="line">   <span class="keyword">this</span>.checkActualViewSize = checkActualViewSize;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里<em>this.viewRef</em>维持了原View的一个弱引用,当这个View被GC回收时，会中断加载</p>
+<h5 id="NonViewAware"><a href="#NonViewAware" class="headerlink" title="NonViewAware"></a>NonViewAware</h5><p>这个表示没有实际View的ImageAware，可以在loadImage的时候使用</p>
+<h4 id="DisplayImageOptions"><a href="#DisplayImageOptions" class="headerlink" title="DisplayImageOptions"></a>DisplayImageOptions</h4><p>配置显示参数，可以设置加载中的图片，加载失败图片，缓存大小等</p>
+<h4 id="ImageLoaderEngine"><a href="#ImageLoaderEngine" class="headerlink" title="ImageLoaderEngine"></a>ImageLoaderEngine</h4><p>通过这个类中的方法来驱动加载图片等操作</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><h4 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h4><p>init()方法中只有一句话：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">engine = <span class="keyword">new</span> ImageLoaderEngine(configuration);</div></pre></td></tr></table></figure></p>
+<p>看一下这个构造函数：</p>
+<h5 id="ImageLoaderEngine构造方法"><a href="#ImageLoaderEngine构造方法" class="headerlink" title="ImageLoaderEngine构造方法"></a>ImageLoaderEngine构造方法</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">ImageLoaderEngine(ImageLoaderConfiguration configuration) &#123;</div><div class="line">	<span class="keyword">this</span>.configuration = configuration;</div><div class="line">	</div><div class="line">	taskExecutor = configuration.taskExecutor;</div><div class="line">	taskExecutorForCachedImages = configuration.taskExecutorForCachedImages;</div><div class="line">	</div><div class="line">	taskDistributor = DefaultConfigurationFactory.createTaskDistributor();<span class="comment">//新建一个newCachedThreadPool线程池</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这里初始化了3个Executor，具体什么用可以看submit()这个方法</p>
+<h5 id="submit-方法"><a href="#submit-方法" class="headerlink" title="submit()方法"></a>submit()方法</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">submit</span><span class="params">(<span class="keyword">final</span> LoadAndDisplayImageTask task)</span> </span>&#123;</div><div class="line">	taskDistributor.execute(<span class="keyword">new</span> Runnable() &#123;</div><div class="line">		<span class="meta">@Override</span></div><div class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">			File image = configuration.diskCache.get(task.getLoadingUri());</div><div class="line">			<span class="keyword">boolean</span> isImageCachedOnDisk = image != <span class="keyword">null</span> &amp;&amp; image.exists();</div><div class="line">			initExecutorsIfNeed();</div><div class="line">			<span class="keyword">if</span> (isImageCachedOnDisk) &#123;</div><div class="line">				taskExecutorForCachedImages.execute(task);</div><div class="line">			&#125; <span class="keyword">else</span> &#123;</div><div class="line">				taskExecutor.execute(task);</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line">	&#125;);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">/** Submits task to execution pool */</span></div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">submit</span><span class="params">(ProcessAndDisplayImageTask task)</span> </span>&#123;</div><div class="line">	initExecutorsIfNeed();</div><div class="line">	taskExecutorForCachedImages.execute(task);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>从后面分析可以知道，缓存中存在的情况下（文件或内存）都通过这个taskExecutorForCachedImages去执行，否则交给taskExecutor去执行（网络加载，耗时间）。taskDistributor运行显示任务，或则用来分配任务？（暂时搞不明白）这个LoadAndDisplayImageTask就是最主要的加载显示图片线程，实现了runnable接口</p>
+<h4 id="加载图片"><a href="#加载图片" class="headerlink" title="加载图片"></a>加载图片</h4><p>首先来分析这一段：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> (TextUtils.isEmpty(uri)) &#123;</div><div class="line">	engine.cancelDisplayTaskFor(imageAware);</div><div class="line">	listener.onLoadingStarted(uri, imageAware.getWrappedView());</div><div class="line">	<span class="keyword">if</span> (options.shouldShowImageForEmptyUri()) &#123;</div><div class="line">		imageAware.setImageDrawable(options.getImageForEmptyUri(configuration.resources));</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		imageAware.setImageDrawable(<span class="keyword">null</span>);</div><div class="line">	&#125;</div><div class="line">	listener.onLoadingComplete(uri, imageAware.getWrappedView(), <span class="keyword">null</span>);</div><div class="line">	<span class="keyword">return</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>首先判断提供的uri是否是空的，如果是空的，则如果在DisplayImageOptions中设置了imageResForEmptyUri/imageForEmptyUri,则在这里显示设置的图片<br>最重要的一段：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line">Bitmap bmp = configuration.memoryCache.get(memoryCacheKey);<span class="comment">//内存缓存中获取图片</span></div><div class="line">	<span class="keyword">if</span> (bmp != <span class="keyword">null</span> &amp;&amp; !bmp.isRecycled()) &#123; <span class="comment">//内存中有缓存且缓存中的图片没有被回收</span></div><div class="line">	L.d(LOG_LOAD_IMAGE_FROM_MEMORY_CACHE, memoryCacheKey);</div><div class="line"></div><div class="line">	<span class="keyword">if</span> (options.shouldPostProcess()) &#123;<span class="comment">//显示之前需要先处理？交给DisplayImageOptions的postProcessor</span></div><div class="line">		ImageLoadingInfo imageLoadingInfo = <span class="keyword">new</span> ImageLoadingInfo(uri, imageAware, targetSize, memoryCacheKey,</div><div class="line">				options, listener, progressListener, engine.getLockForUri(uri));</div><div class="line">		ProcessAndDisplayImageTask displayTask = <span class="keyword">new</span> ProcessAndDisplayImageTask(engine, bmp, imageLoadingInfo,</div><div class="line">				defineHandler(options));</div><div class="line">		<span class="keyword">if</span> (options.isSyncLoading()) &#123;<span class="comment">//同步加载的话直接调用run方法，调用LoadAndDisplayImageTask.runTask方法，然后直接调用DisplayBitmapTask.run()方法，imageLoadingInfo.options.getDisplayer().display</span></div><div class="line">			displayTask.run();</div><div class="line">		&#125; <span class="keyword">else</span> &#123;</div><div class="line">			engine.submit(displayTask);<span class="comment">//异步显示的话交给engine处理，调用taskExecutorForCachedImages.execute(task);</span></div><div class="line">		&#125;</div><div class="line">	&#125; <span class="keyword">else</span> &#123;<span class="comment">//显示之前不需要处理</span></div><div class="line">		options.getDisplayer().display(bmp, imageAware, LoadedFrom.MEMORY_CACHE);<span class="comment">//交给显示器显示，默认直接显示</span></div><div class="line">		listener.onLoadingComplete(uri, imageAware.getWrappedView(), bmp);</div><div class="line">	&#125;</div><div class="line">&#125; <span class="keyword">else</span> &#123;<span class="comment">//内存中不存在缓存</span></div><div class="line">	<span class="keyword">if</span> (options.shouldShowImageOnLoading()) &#123;<span class="comment">//显示加载中的图片</span></div><div class="line">		imageAware.setImageDrawable(options.getImageOnLoading(configuration.resources));</div><div class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (options.isResetViewBeforeLoading()) &#123;<span class="comment">//加载前取消前面的</span></div><div class="line">		imageAware.setImageDrawable(<span class="keyword">null</span>);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	ImageLoadingInfo imageLoadingInfo = <span class="keyword">new</span> ImageLoadingInfo(uri, imageAware, targetSize, memoryCacheKey,</div><div class="line">			options, listener, progressListener, engine.getLockForUri(uri));</div><div class="line">	LoadAndDisplayImageTask displayTask = <span class="keyword">new</span> LoadAndDisplayImageTask(engine, imageLoadingInfo,</div><div class="line">			defineHandler(options));</div><div class="line">	<span class="keyword">if</span> (options.isSyncLoading()) &#123;<span class="comment">//同步加载</span></div><div class="line">		displayTask.run();<span class="comment">//</span></div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		engine.submit(displayTask);</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>这里先找内存中有没有缓存在，如果有，则生成ProcessAndDisplayImageTask，如果没有，则生成LoadAndDisplayImageTask。从名字中就可以看出，LoadAndDisplayImageTask是要进行load操作的</p>
+<h5 id="ProcessAndDisplayImageTask"><a href="#ProcessAndDisplayImageTask" class="headerlink" title="ProcessAndDisplayImageTask"></a>ProcessAndDisplayImageTask</h5><p>看下它的run方法：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">	L.d(LOG_POSTPROCESS_IMAGE, imageLoadingInfo.memoryCacheKey);</div><div class="line"></div><div class="line">	BitmapProcessor processor = imageLoadingInfo.options.getPostProcessor();</div><div class="line">	Bitmap processedBitmap = processor.process(bitmap);</div><div class="line">	DisplayBitmapTask displayBitmapTask = <span class="keyword">new</span> DisplayBitmapTask(processedBitmap, imageLoadingInfo, engine,</div><div class="line">			LoadedFrom.MEMORY_CACHE);</div><div class="line">	LoadAndDisplayImageTask.runTask(displayBitmapTask, imageLoadingInfo.options.isSyncLoading(), handler, engine);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>如果显示前需要处理图片，可以通过设置options的postProcessor参数来处理，然后它启动了DisplayBitmapTask，里面是简单的图片加载任务</p>
+<h5 id="LoadAndDisplayImageTask"><a href="#LoadAndDisplayImageTask" class="headerlink" title="LoadAndDisplayImageTask"></a>LoadAndDisplayImageTask</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">	<span class="keyword">if</span> (waitIfPaused()) <span class="keyword">return</span>;</div><div class="line">	<span class="keyword">if</span> (delayIfNeed()) <span class="keyword">return</span>;</div><div class="line"></div><div class="line">	ReentrantLock loadFromUriLock = imageLoadingInfo.loadFromUriLock;</div><div class="line">	L.d(LOG_START_DISPLAY_IMAGE_TASK, memoryCacheKey);</div><div class="line">	<span class="keyword">if</span> (loadFromUriLock.isLocked()) &#123;</div><div class="line">		L.d(LOG_WAITING_FOR_IMAGE_LOADED, memoryCacheKey);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	loadFromUriLock.lock();</div><div class="line">	Bitmap bmp;</div><div class="line">	<span class="keyword">try</span> &#123;</div><div class="line">		checkTaskNotActual();</div><div class="line"></div><div class="line">		bmp = configuration.memoryCache.get(memoryCacheKey);<span class="comment">//从内存中取</span></div><div class="line">		<span class="keyword">if</span> (bmp == <span class="keyword">null</span> </div><div class="line"> bmp.isRecycled()) &#123;<span class="comment">//内存中没有或被回收</span></div><div class="line">			bmp = tryLoadBitmap();<span class="comment">//尝试加载bitmap，先从diskCache中取，如果没有，则通过网络下载，并保存至文件中，同时更新到diskCache中</span></div><div class="line">			<span class="keyword">if</span> (bmp == <span class="keyword">null</span>) <span class="keyword">return</span>; <span class="comment">// listener callback already was fired</span></div><div class="line"></div><div class="line">			checkTaskNotActual();</div><div class="line">			checkTaskInterrupted();</div><div class="line"></div><div class="line">			<span class="keyword">if</span> (options.shouldPreProcess()) &#123;<span class="comment">//可以在放入内存中缓存前先对图片进行处理</span></div><div class="line">				L.d(LOG_PREPROCESS_IMAGE, memoryCacheKey);</div><div class="line">				bmp = options.getPreProcessor().process(bmp);</div><div class="line">				<span class="keyword">if</span> (bmp == <span class="keyword">null</span>) &#123;</div><div class="line">					L.e(ERROR_PRE_PROCESSOR_NULL, memoryCacheKey);</div><div class="line">				&#125;</div><div class="line">			&#125;</div><div class="line"></div><div class="line">			<span class="keyword">if</span> (bmp != <span class="keyword">null</span> &amp;&amp; options.isCacheInMemory()) &#123;</div><div class="line">				L.d(LOG_CACHE_IMAGE_IN_MEMORY, memoryCacheKey);</div><div class="line">				configuration.memoryCache.put(memoryCacheKey, bmp);<span class="comment">//放入内存进行缓存</span></div><div class="line">			&#125;</div><div class="line">		&#125; <span class="keyword">else</span> &#123;</div><div class="line">			loadedFrom = LoadedFrom.MEMORY_CACHE;</div><div class="line">			L.d(LOG_GET_IMAGE_FROM_MEMORY_CACHE_AFTER_WAITING, memoryCacheKey);</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		<span class="keyword">if</span> (bmp != <span class="keyword">null</span> &amp;&amp; options.shouldPostProcess()) &#123;</div><div class="line">			L.d(LOG_POSTPROCESS_IMAGE, memoryCacheKey);</div><div class="line">			bmp = options.getPostProcessor().process(bmp);<span class="comment">//显示图片前先对图片进行处理</span></div><div class="line">			<span class="keyword">if</span> (bmp == <span class="keyword">null</span>) &#123;</div><div class="line">				L.e(ERROR_POST_PROCESSOR_NULL, memoryCacheKey);</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line">		checkTaskNotActual();</div><div class="line">		checkTaskInterrupted();</div><div class="line">	&#125; <span class="keyword">catch</span> (TaskCancelledException e) &#123;</div><div class="line">		fireCancelEvent();</div><div class="line">		<span class="keyword">return</span>;</div><div class="line">	&#125; <span class="keyword">finally</span> &#123;</div><div class="line">		loadFromUriLock.unlock();</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	DisplayBitmapTask displayBitmapTask = <span class="keyword">new</span> DisplayBitmapTask(bmp, imageLoadingInfo, engine, loadedFrom);</div><div class="line">	runTask(displayBitmapTask, syncLoading, handler, engine);<span class="comment">//运行显示任务&#125;</span></div></pre></td></tr></table></figure>
+<p>首先还是从内存中取缓存，没有再通过tryLoadBitmap()方法，先尝试从文件缓存diskCache中取，如果还没有，就从网上下载，然后保存至文件Cache（configuration.diskCache.save方法）。这里可以通过options.getPreProcessor().process(bmp)在图片缓存至内存前先对图片进行处理，然后缓存至内存中，最后还是DisplayBitmapTask</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+            <a href="/tags/Universal-image-loader/" rel="tag"># Universal-image-loader</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/02/Android-Studio-JUnit/" rel="next" title="Android Studio中利用JUnit进行单元测试">
+                <i class="fa fa-chevron-left"></i> Android Studio中利用JUnit进行单元测试
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/03/02/Hexo-error/" rel="prev" title="Hexo问题集">
+                Hexo问题集 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <div class="ds-share flat" data-thread-key="2017/03/02/image-loader-source/"
+     data-title="Universal-image-loader源码解读"
+     data-content=""
+     data-url="https://chblackdog.github.io/2017/03/02/image-loader-source/">
+  <div class="ds-share-inline">
+    <ul  class="ds-share-icons-16">
+
+      <li data-toggle="ds-share-icons-more"><a class="ds-more" href="javascript:void(0);">分享到：</a></li>
+      <li><a class="ds-weibo" href="javascript:void(0);" data-service="weibo">微博</a></li>
+      <li><a class="ds-qzone" href="javascript:void(0);" data-service="qzone">QQ空间</a></li>
+      <li><a class="ds-qqt" href="javascript:void(0);" data-service="qqt">腾讯微博</a></li>
+      <li><a class="ds-wechat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+
+    </ul>
+    <div class="ds-share-icons-more">
+    </div>
+  </div>
+</div>
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2017/03/02/image-loader-source/"
+           data-title="Universal-image-loader源码解读" data-url="https://chblackdog.github.io/2017/03/02/image-loader-source/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="CHBlackdog" />
+          <p class="site-author-name" itemprop="name">CHBlackdog</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用"><span class="nav-number">1.</span> <span class="nav-text">使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#类解析"><span class="nav-number">2.</span> <span class="nav-text">类解析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ImageAware"><span class="nav-number">2.1.</span> <span class="nav-text">ImageAware</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#NonViewAware"><span class="nav-number">2.1.1.</span> <span class="nav-text">NonViewAware</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DisplayImageOptions"><span class="nav-number">2.2.</span> <span class="nav-text">DisplayImageOptions</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ImageLoaderEngine"><span class="nav-number">2.3.</span> <span class="nav-text">ImageLoaderEngine</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析"><span class="nav-number">3.</span> <span class="nav-text">分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#初始化"><span class="nav-number">3.1.</span> <span class="nav-text">初始化</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#ImageLoaderEngine构造方法"><span class="nav-number">3.1.1.</span> <span class="nav-text">ImageLoaderEngine构造方法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#submit-方法"><span class="nav-number">3.1.2.</span> <span class="nav-text">submit()方法</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#加载图片"><span class="nav-number">3.2.</span> <span class="nav-text">加载图片</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#ProcessAndDisplayImageTask"><span class="nav-number">3.2.1.</span> <span class="nav-text">ProcessAndDisplayImageTask</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#LoadAndDisplayImageTask"><span class="nav-number">3.2.2.</span> <span class="nav-text">LoadAndDisplayImageTask</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2016 - 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">CHBlackdog</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chblackdog"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/algolia-instant-search/instantsearch.min.css">
+
+  
+  
+  <script src="/lib/algolia-instant-search/instantsearch.min.js"></script>
+  
+
+  <script src="/js/src/algolia-search.js?v=5.1.0"></script>
+
+
+
+  
+
+</body>
+</html>

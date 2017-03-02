@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>CHBlackdog-翦</title>
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://chblackdog.github.io/"/>
+  <updated>2017-03-02T03:32:24.000Z</updated>
+  <id>https://chblackdog.github.io/</id>
+  
+  <author>
+    <name>CHBlackdog</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Hexo问题集</title>
+    <link href="https://chblackdog.github.io/2017/03/02/Hexo-error/"/>
+    <id>https://chblackdog.github.io/2017/03/02/Hexo-error/</id>
+    <published>2017-03-02T03:17:46.000Z</published>
+    <updated>2017-03-02T03:32:24.000Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="解决不可见的换行符导致的hexo启动失败"><a href="#解决不可见的换行符导致的hexo启动失败" class="headerlink" title="解决不可见的换行符导致的hexo启动失败"></a>解决不可见的换行符导致的hexo启动失败</h3><h4 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h4><p>写blog过程中需要从ide中复制代码段，但是写完hexo一直报错：</p>
+<a id="more"></a>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">Template render error: (unknown path)</div><div class="line">  SyntaxError: Invalid or unexpected token</div><div class="line">    at Object.<span class="keyword">exports</span>.prettifyError (/Users/chenghaibo/blog/hexo/node_modules/nunjucks/src/lib.js:<span class="number">34</span>:<span class="number">15</span>)</div><div class="line">    at new_cls.render (/Users/chenghaibo/blog/hexo/node_modules/nunjucks/src/environment.js:<span class="number">469</span>:<span class="number">27</span>)</div></pre></td></tr></table></figure>
+<p>找了半天终于找到问题所在，这是由于直接从ide中把代码段复制到了textnut中，它自动在每行后面追加了一个不可见的换行符，就是这个换行符导致了上面问题的出现</p>
+<h4 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h4><ul>
+<li>方法一<br>pages貌似不支持将软回车替换成硬回车，所以先使用pages将换行符替换成其他字符，比如||，然后将文本复制到word中，将||替换成^p,完成！</li>
+<li>方法二<br>先将ide中的代码复制到pages中，然后再复制到textnut中，这样不会出现换行符</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h3 id=&quot;解决不可见的换行符导致的hexo启动失败&quot;&gt;&lt;a href=&quot;#解决不可见的换行符导致的hexo启动失败&quot; class=&quot;headerlink&quot; title=&quot;解决不可见的换行符导致的hexo启动失败&quot;&gt;&lt;/a&gt;解决不可见的换行符导致的hexo启动失败&lt;/h3&gt;&lt;h4 id=&quot;问题描述&quot;&gt;&lt;a href=&quot;#问题描述&quot; class=&quot;headerlink&quot; title=&quot;问题描述&quot;&gt;&lt;/a&gt;问题描述&lt;/h4&gt;&lt;p&gt;写blog过程中需要从ide中复制代码段，但是写完hexo一直报错：&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="Hexo" scheme="https://chblackdog.github.io/categories/Hexo/"/>
+    
+    
+      <category term="Hexo" scheme="https://chblackdog.github.io/tags/Hexo/"/>
+    
+      <category term="Markdown" scheme="https://chblackdog.github.io/tags/Markdown/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Universal-image-loader源码解读</title>
+    <link href="https://chblackdog.github.io/2017/03/02/image-loader-source/"/>
+    <id>https://chblackdog.github.io/2017/03/02/image-loader-source/</id>
+    <published>2017-03-02T02:48:56.000Z</published>
+    <updated>2017-03-02T03:14:11.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>Android项目中经常用到了异步加载框架Universal-image-loader，有三级缓存（实际上只有两级，网络不算）：内存，文件。用了很久却不知道其原理，最近有时间来看下其执行原理到底是什么。</p>
+<a id="more"></a>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>首先Universal-image-loader的用法很简单，首先是配置：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">ImageLoaderConfiguration.Builder configBuilder = <span class="keyword">new</span> ImageLoaderConfiguration.Builder(context);</div><div class="line">configBuilder.diskCacheSize(<span class="number">50</span> * <span class="number">1024</span> * <span class="number">1024</span>); <span class="comment">// 50 MiB 文件缓存大小</span></div><div class="line"><span class="comment">//或者使用ImageLoaderConfiguration.createDefault(context);使用默认配置</span></div><div class="line">ImageLoader.getInstance().init(configBuilder.build());</div></pre></td></tr></table></figure></p>
+<p>然后是使用，有三种方法可以使用：</p>
+<ol>
+<li>displayImage</li>
+<li>loadImage （只加载图片而不显示）</li>
+<li>loadImageSync （异步加载）<br>不管用哪种方法，最终都使用了<br>displayImage(String uri, ImageAware imageAware, DisplayImageOptions options,ImageSize targetSize, ImageLoadingListener listener, ImageLoadingProgressListener progressListener)这个方法</li>
+</ol>
+<ul>
+<li>ImageAware：图片容器</li>
+<li>DisplayImageOptions：图片显示参数设置</li>
+<li>ImageSize：图片大小</li>
+<li>ImageLoadingListener：图片加载动作监听</li>
+<li>ImageLoadingProgressListener：加载进度监听<h3 id="类解析"><a href="#类解析" class="headerlink" title="类解析"></a>类解析</h3>分析之前先了解一下各个类<h4 id="ImageAware"><a href="#ImageAware" class="headerlink" title="ImageAware"></a>ImageAware</h4>这是一个接口，相当于图片容器，提供了所有加载/显示图片所需要的方法(如获取容器的长宽等）。一般使用<strong>ImageViewAware</strong>，继承自<strong>ViewAware</strong>,来看下它的构造方法<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="title">ViewAware</span><span class="params">(View view, <span class="keyword">boolean</span> checkActualViewSize)</span> </span>&#123;</div><div class="line">   <span class="keyword">if</span> (view == <span class="keyword">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"view must not be null"</span>);</div><div class="line">   <span class="keyword">this</span>.viewRef = <span class="keyword">new</span> WeakReference&lt;View&gt;(view);</div><div class="line">   <span class="keyword">this</span>.checkActualViewSize = checkActualViewSize;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这里<em>this.viewRef</em>维持了原View的一个弱引用,当这个View被GC回收时，会中断加载</p>
+<h5 id="NonViewAware"><a href="#NonViewAware" class="headerlink" title="NonViewAware"></a>NonViewAware</h5><p>这个表示没有实际View的ImageAware，可以在loadImage的时候使用</p>
+<h4 id="DisplayImageOptions"><a href="#DisplayImageOptions" class="headerlink" title="DisplayImageOptions"></a>DisplayImageOptions</h4><p>配置显示参数，可以设置加载中的图片，加载失败图片，缓存大小等</p>
+<h4 id="ImageLoaderEngine"><a href="#ImageLoaderEngine" class="headerlink" title="ImageLoaderEngine"></a>ImageLoaderEngine</h4><p>通过这个类中的方法来驱动加载图片等操作</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><h4 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h4><p>init()方法中只有一句话：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">engine = <span class="keyword">new</span> ImageLoaderEngine(configuration);</div></pre></td></tr></table></figure></p>
+<p>看一下这个构造函数：</p>
+<h5 id="ImageLoaderEngine构造方法"><a href="#ImageLoaderEngine构造方法" class="headerlink" title="ImageLoaderEngine构造方法"></a>ImageLoaderEngine构造方法</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">ImageLoaderEngine(ImageLoaderConfiguration configuration) &#123;</div><div class="line">	<span class="keyword">this</span>.configuration = configuration;</div><div class="line">	</div><div class="line">	taskExecutor = configuration.taskExecutor;</div><div class="line">	taskExecutorForCachedImages = configuration.taskExecutorForCachedImages;</div><div class="line">	</div><div class="line">	taskDistributor = DefaultConfigurationFactory.createTaskDistributor();<span class="comment">//新建一个newCachedThreadPool线程池</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这里初始化了3个Executor，具体什么用可以看submit()这个方法</p>
+<h5 id="submit-方法"><a href="#submit-方法" class="headerlink" title="submit()方法"></a>submit()方法</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">submit</span><span class="params">(<span class="keyword">final</span> LoadAndDisplayImageTask task)</span> </span>&#123;</div><div class="line">	taskDistributor.execute(<span class="keyword">new</span> Runnable() &#123;</div><div class="line">		<span class="meta">@Override</span></div><div class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">			File image = configuration.diskCache.get(task.getLoadingUri());</div><div class="line">			<span class="keyword">boolean</span> isImageCachedOnDisk = image != <span class="keyword">null</span> &amp;&amp; image.exists();</div><div class="line">			initExecutorsIfNeed();</div><div class="line">			<span class="keyword">if</span> (isImageCachedOnDisk) &#123;</div><div class="line">				taskExecutorForCachedImages.execute(task);</div><div class="line">			&#125; <span class="keyword">else</span> &#123;</div><div class="line">				taskExecutor.execute(task);</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line">	&#125;);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">/** Submits task to execution pool */</span></div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">submit</span><span class="params">(ProcessAndDisplayImageTask task)</span> </span>&#123;</div><div class="line">	initExecutorsIfNeed();</div><div class="line">	taskExecutorForCachedImages.execute(task);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>从后面分析可以知道，缓存中存在的情况下（文件或内存）都通过这个taskExecutorForCachedImages去执行，否则交给taskExecutor去执行（网络加载，耗时间）。taskDistributor运行显示任务，或则用来分配任务？（暂时搞不明白）这个LoadAndDisplayImageTask就是最主要的加载显示图片线程，实现了runnable接口</p>
+<h4 id="加载图片"><a href="#加载图片" class="headerlink" title="加载图片"></a>加载图片</h4><p>首先来分析这一段：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> (TextUtils.isEmpty(uri)) &#123;</div><div class="line">	engine.cancelDisplayTaskFor(imageAware);</div><div class="line">	listener.onLoadingStarted(uri, imageAware.getWrappedView());</div><div class="line">	<span class="keyword">if</span> (options.shouldShowImageForEmptyUri()) &#123;</div><div class="line">		imageAware.setImageDrawable(options.getImageForEmptyUri(configuration.resources));</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		imageAware.setImageDrawable(<span class="keyword">null</span>);</div><div class="line">	&#125;</div><div class="line">	listener.onLoadingComplete(uri, imageAware.getWrappedView(), <span class="keyword">null</span>);</div><div class="line">	<span class="keyword">return</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>首先判断提供的uri是否是空的，如果是空的，则如果在DisplayImageOptions中设置了imageResForEmptyUri/imageForEmptyUri,则在这里显示设置的图片<br>最重要的一段：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line">Bitmap bmp = configuration.memoryCache.get(memoryCacheKey);<span class="comment">//内存缓存中获取图片</span></div><div class="line">	<span class="keyword">if</span> (bmp != <span class="keyword">null</span> &amp;&amp; !bmp.isRecycled()) &#123; <span class="comment">//内存中有缓存且缓存中的图片没有被回收</span></div><div class="line">	L.d(LOG_LOAD_IMAGE_FROM_MEMORY_CACHE, memoryCacheKey);</div><div class="line"></div><div class="line">	<span class="keyword">if</span> (options.shouldPostProcess()) &#123;<span class="comment">//显示之前需要先处理？交给DisplayImageOptions的postProcessor</span></div><div class="line">		ImageLoadingInfo imageLoadingInfo = <span class="keyword">new</span> ImageLoadingInfo(uri, imageAware, targetSize, memoryCacheKey,</div><div class="line">				options, listener, progressListener, engine.getLockForUri(uri));</div><div class="line">		ProcessAndDisplayImageTask displayTask = <span class="keyword">new</span> ProcessAndDisplayImageTask(engine, bmp, imageLoadingInfo,</div><div class="line">				defineHandler(options));</div><div class="line">		<span class="keyword">if</span> (options.isSyncLoading()) &#123;<span class="comment">//同步加载的话直接调用run方法，调用LoadAndDisplayImageTask.runTask方法，然后直接调用DisplayBitmapTask.run()方法，imageLoadingInfo.options.getDisplayer().display</span></div><div class="line">			displayTask.run();</div><div class="line">		&#125; <span class="keyword">else</span> &#123;</div><div class="line">			engine.submit(displayTask);<span class="comment">//异步显示的话交给engine处理，调用taskExecutorForCachedImages.execute(task);</span></div><div class="line">		&#125;</div><div class="line">	&#125; <span class="keyword">else</span> &#123;<span class="comment">//显示之前不需要处理</span></div><div class="line">		options.getDisplayer().display(bmp, imageAware, LoadedFrom.MEMORY_CACHE);<span class="comment">//交给显示器显示，默认直接显示</span></div><div class="line">		listener.onLoadingComplete(uri, imageAware.getWrappedView(), bmp);</div><div class="line">	&#125;</div><div class="line">&#125; <span class="keyword">else</span> &#123;<span class="comment">//内存中不存在缓存</span></div><div class="line">	<span class="keyword">if</span> (options.shouldShowImageOnLoading()) &#123;<span class="comment">//显示加载中的图片</span></div><div class="line">		imageAware.setImageDrawable(options.getImageOnLoading(configuration.resources));</div><div class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (options.isResetViewBeforeLoading()) &#123;<span class="comment">//加载前取消前面的</span></div><div class="line">		imageAware.setImageDrawable(<span class="keyword">null</span>);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	ImageLoadingInfo imageLoadingInfo = <span class="keyword">new</span> ImageLoadingInfo(uri, imageAware, targetSize, memoryCacheKey,</div><div class="line">			options, listener, progressListener, engine.getLockForUri(uri));</div><div class="line">	LoadAndDisplayImageTask displayTask = <span class="keyword">new</span> LoadAndDisplayImageTask(engine, imageLoadingInfo,</div><div class="line">			defineHandler(options));</div><div class="line">	<span class="keyword">if</span> (options.isSyncLoading()) &#123;<span class="comment">//同步加载</span></div><div class="line">		displayTask.run();<span class="comment">//</span></div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		engine.submit(displayTask);</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>这里先找内存中有没有缓存在，如果有，则生成ProcessAndDisplayImageTask，如果没有，则生成LoadAndDisplayImageTask。从名字中就可以看出，LoadAndDisplayImageTask是要进行load操作的</p>
+<h5 id="ProcessAndDisplayImageTask"><a href="#ProcessAndDisplayImageTask" class="headerlink" title="ProcessAndDisplayImageTask"></a>ProcessAndDisplayImageTask</h5><p>看下它的run方法：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">	L.d(LOG_POSTPROCESS_IMAGE, imageLoadingInfo.memoryCacheKey);</div><div class="line"></div><div class="line">	BitmapProcessor processor = imageLoadingInfo.options.getPostProcessor();</div><div class="line">	Bitmap processedBitmap = processor.process(bitmap);</div><div class="line">	DisplayBitmapTask displayBitmapTask = <span class="keyword">new</span> DisplayBitmapTask(processedBitmap, imageLoadingInfo, engine,</div><div class="line">			LoadedFrom.MEMORY_CACHE);</div><div class="line">	LoadAndDisplayImageTask.runTask(displayBitmapTask, imageLoadingInfo.options.isSyncLoading(), handler, engine);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>如果显示前需要处理图片，可以通过设置options的postProcessor参数来处理，然后它启动了DisplayBitmapTask，里面是简单的图片加载任务</p>
+<h5 id="LoadAndDisplayImageTask"><a href="#LoadAndDisplayImageTask" class="headerlink" title="LoadAndDisplayImageTask"></a>LoadAndDisplayImageTask</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</div><div class="line">	<span class="keyword">if</span> (waitIfPaused()) <span class="keyword">return</span>;</div><div class="line">	<span class="keyword">if</span> (delayIfNeed()) <span class="keyword">return</span>;</div><div class="line"></div><div class="line">	ReentrantLock loadFromUriLock = imageLoadingInfo.loadFromUriLock;</div><div class="line">	L.d(LOG_START_DISPLAY_IMAGE_TASK, memoryCacheKey);</div><div class="line">	<span class="keyword">if</span> (loadFromUriLock.isLocked()) &#123;</div><div class="line">		L.d(LOG_WAITING_FOR_IMAGE_LOADED, memoryCacheKey);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	loadFromUriLock.lock();</div><div class="line">	Bitmap bmp;</div><div class="line">	<span class="keyword">try</span> &#123;</div><div class="line">		checkTaskNotActual();</div><div class="line"></div><div class="line">		bmp = configuration.memoryCache.get(memoryCacheKey);<span class="comment">//从内存中取</span></div><div class="line">		<span class="keyword">if</span> (bmp == <span class="keyword">null</span> </div><div class="line"> bmp.isRecycled()) &#123;<span class="comment">//内存中没有或被回收</span></div><div class="line">			bmp = tryLoadBitmap();<span class="comment">//尝试加载bitmap，先从diskCache中取，如果没有，则通过网络下载，并保存至文件中，同时更新到diskCache中</span></div><div class="line">			<span class="keyword">if</span> (bmp == <span class="keyword">null</span>) <span class="keyword">return</span>; <span class="comment">// listener callback already was fired</span></div><div class="line"></div><div class="line">			checkTaskNotActual();</div><div class="line">			checkTaskInterrupted();</div><div class="line"></div><div class="line">			<span class="keyword">if</span> (options.shouldPreProcess()) &#123;<span class="comment">//可以在放入内存中缓存前先对图片进行处理</span></div><div class="line">				L.d(LOG_PREPROCESS_IMAGE, memoryCacheKey);</div><div class="line">				bmp = options.getPreProcessor().process(bmp);</div><div class="line">				<span class="keyword">if</span> (bmp == <span class="keyword">null</span>) &#123;</div><div class="line">					L.e(ERROR_PRE_PROCESSOR_NULL, memoryCacheKey);</div><div class="line">				&#125;</div><div class="line">			&#125;</div><div class="line"></div><div class="line">			<span class="keyword">if</span> (bmp != <span class="keyword">null</span> &amp;&amp; options.isCacheInMemory()) &#123;</div><div class="line">				L.d(LOG_CACHE_IMAGE_IN_MEMORY, memoryCacheKey);</div><div class="line">				configuration.memoryCache.put(memoryCacheKey, bmp);<span class="comment">//放入内存进行缓存</span></div><div class="line">			&#125;</div><div class="line">		&#125; <span class="keyword">else</span> &#123;</div><div class="line">			loadedFrom = LoadedFrom.MEMORY_CACHE;</div><div class="line">			L.d(LOG_GET_IMAGE_FROM_MEMORY_CACHE_AFTER_WAITING, memoryCacheKey);</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		<span class="keyword">if</span> (bmp != <span class="keyword">null</span> &amp;&amp; options.shouldPostProcess()) &#123;</div><div class="line">			L.d(LOG_POSTPROCESS_IMAGE, memoryCacheKey);</div><div class="line">			bmp = options.getPostProcessor().process(bmp);<span class="comment">//显示图片前先对图片进行处理</span></div><div class="line">			<span class="keyword">if</span> (bmp == <span class="keyword">null</span>) &#123;</div><div class="line">				L.e(ERROR_POST_PROCESSOR_NULL, memoryCacheKey);</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line">		checkTaskNotActual();</div><div class="line">		checkTaskInterrupted();</div><div class="line">	&#125; <span class="keyword">catch</span> (TaskCancelledException e) &#123;</div><div class="line">		fireCancelEvent();</div><div class="line">		<span class="keyword">return</span>;</div><div class="line">	&#125; <span class="keyword">finally</span> &#123;</div><div class="line">		loadFromUriLock.unlock();</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	DisplayBitmapTask displayBitmapTask = <span class="keyword">new</span> DisplayBitmapTask(bmp, imageLoadingInfo, engine, loadedFrom);</div><div class="line">	runTask(displayBitmapTask, syncLoading, handler, engine);<span class="comment">//运行显示任务&#125;</span></div></pre></td></tr></table></figure>
+<p>首先还是从内存中取缓存，没有再通过tryLoadBitmap()方法，先尝试从文件缓存diskCache中取，如果还没有，就从网上下载，然后保存至文件Cache（configuration.diskCache.save方法）。这里可以通过options.getPreProcessor().process(bmp)在图片缓存至内存前先对图片进行处理，然后缓存至内存中，最后还是DisplayBitmapTask</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;Android项目中经常用到了异步加载框架Universal-image-loader，有三级缓存（实际上只有两级，网络不算）：内存，文件。用了很久却不知道其原理，最近有时间来看下其执行原理到底是什么。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="Android源码" scheme="https://chblackdog.github.io/categories/Android%E6%BA%90%E7%A0%81/"/>
+    
+    
+      <category term="Android" scheme="https://chblackdog.github.io/tags/Android/"/>
+    
+      <category term="Universal-image-loader" scheme="https://chblackdog.github.io/tags/Universal-image-loader/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Android Studio中利用JUnit进行单元测试</title>
+    <link href="https://chblackdog.github.io/2017/03/02/Android-Studio-JUnit/"/>
+    <id>https://chblackdog.github.io/2017/03/02/Android-Studio-JUnit/</id>
+    <published>2017-03-02T02:13:00.000Z</published>
+    <updated>2017-03-02T02:47:48.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>在安卓开发过程中很多时候都需要进行测试，我们可以直接在当前工程中引入JUnit进行单元的测试。在Android Studio上使用时需要进行一些简单的配置</p>
+<a id="more"></a>
+<h3 id="加入JUnit依赖"><a href="#加入JUnit依赖" class="headerlink" title="加入JUnit依赖"></a>加入JUnit依赖</h3><p>在app/build.gradle加入以下代码<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">dependencies &#123;</div><div class="line">    testCompile <span class="string">'junit:junit:4.12'</span></div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h3 id="创建test文件夹"><a href="#创建test文件夹" class="headerlink" title="创建test文件夹"></a>创建test文件夹</h3><p>一般情况下当我们新建一个项目的时候，Android Studio会自动帮我们创建test文件夹，<strong>app/src/test</strong>。如果没有我们就要自己新建一个test目录，步骤如下：<br>    1    项目试图切换到project<br>    2    右键src-&gt;New-&gt;Directory,文件名是test<br>    3    右键新建的test文件夹，New-&gt;Folder-&gt;Java Folder勾选Change Folder Location,并在下面的地址栏中填入src/test/java<br><img src="/2017/03/02/Android-Studio-JUnit/" alt=""></p>
+<h3 id="进行测试"><a href="#进行测试" class="headerlink" title="进行测试"></a>进行测试</h3><p>现在我们可以在src/test/java下面建测试类进行单元<br><img src="/2017/03/02/Android-Studio-JUnit/" alt=""><br>参考文档：<br>可以科学上网的可以看这篇原文：<a href="http://www.vogella.com/tutorials/AndroidTesting/article.html" target="_blank" rel="external">Unit and UI Testing in Android Studio</a><br>翻译可以看这篇：<a href="http://www.jianshu.com/p/03118c11c199" target="_blank" rel="external">在Android Studio中进行单元测试和UI测试</a></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在安卓开发过程中很多时候都需要进行测试，我们可以直接在当前工程中引入JUnit进行单元的测试。在Android Studio上使用时需要进行一些简单的配置&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="Android Studio" scheme="https://chblackdog.github.io/categories/Android-Studio/"/>
+    
+    
+      <category term="Android Studio" scheme="https://chblackdog.github.io/tags/Android-Studio/"/>
+    
+      <category term="JUnit" scheme="https://chblackdog.github.io/tags/JUnit/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Hexo常用命令</title>
+    <link href="https://chblackdog.github.io/2017/03/02/hexo-help/"/>
+    <id>https://chblackdog.github.io/2017/03/02/hexo-help/</id>
+    <published>2017-03-02T02:02:43.000Z</published>
+    <updated>2017-03-02T02:11:47.000Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="按照layout模版自动生成文档"><a href="#按照layout模版自动生成文档" class="headerlink" title="按照layout模版自动生成文档"></a>按照layout模版自动生成文档</h3><p>其中layout是scaffolds文件夹中自己定义的模版文件,可在_config.yml配置生成的文件全名格式（new_post_name属性）<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">hexo <span class="keyword">new</span> [layout] &lt;title&gt;</div></pre></td></tr></table></figure></p>
+<a id="more"></a>
+<h3 id="启动本地服务"><a href="#启动本地服务" class="headerlink" title="启动本地服务"></a>启动本地服务</h3><p>启动后可以通过<a href="http://localhost:4000" target="_blank" rel="external">http://localhost:4000</a>访问生成的网页<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">hexo server</div></pre></td></tr></table></figure></p>
+<h3 id="生成静态文件"><a href="#生成静态文件" class="headerlink" title="生成静态文件"></a>生成静态文件</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">hexo generate</div></pre></td></tr></table></figure>
+<h3 id="部署到git"><a href="#部署到git" class="headerlink" title="部署到git"></a>部署到git</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">hexo deploy</div><div class="line">＃或者:</div><div class="line">hexo d -g ＃使用这个命令会在deploy之前generate</div></pre></td></tr></table></figure>
+<h3 id="使用hexo-asset-image在文章中插入图片"><a href="#使用hexo-asset-image在文章中插入图片" class="headerlink" title="使用hexo-asset-image在文章中插入图片"></a>使用hexo-asset-image在文章中插入图片</h3><h4 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h4><p>首先修改_config.yml,设置<em>post_asset_folder:true</em>，然后安装<em>hexo-asset-image</em>：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm install hexo-asset-image --save</div></pre></td></tr></table></figure></p>
+<h4 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h4><p>在_post文件夹下新建一个跟对应的文章名字相同的文件夹如：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">- <span class="number">2017</span>-<span class="number">01</span>-<span class="number">01</span>-title.md</div><div class="line">- <span class="number">2017</span>-<span class="number">01</span>-<span class="number">01</span>-title/</div><div class="line">	- img1.jpg</div><div class="line">  	- img2.jpg</div></pre></td></tr></table></figure></p>
+<p>使用的时候直接使用<code>![](img1.jpg)</code>就可以插入图片了</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h3 id=&quot;按照layout模版自动生成文档&quot;&gt;&lt;a href=&quot;#按照layout模版自动生成文档&quot; class=&quot;headerlink&quot; title=&quot;按照layout模版自动生成文档&quot;&gt;&lt;/a&gt;按照layout模版自动生成文档&lt;/h3&gt;&lt;p&gt;其中layout是scaffolds文件夹中自己定义的模版文件,可在_config.yml配置生成的文件全名格式（new_post_name属性）&lt;br&gt;&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;1&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;hexo &lt;span class=&quot;keyword&quot;&gt;new&lt;/span&gt; [layout] &amp;lt;title&amp;gt;&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="Hexo" scheme="https://chblackdog.github.io/categories/Hexo/"/>
+    
+    
+      <category term="Hexo" scheme="https://chblackdog.github.io/tags/Hexo/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Hello World</title>
+    <link href="https://chblackdog.github.io/2017/02/28/hello-world/"/>
+    <id>https://chblackdog.github.io/2017/02/28/hello-world/</id>
+    <published>2017-02-28T05:13:16.000Z</published>
+    <updated>2017-03-02T02:00:49.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><a id="more"></a>
+<h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo new <span class="string">"My New Post"</span></div></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo server</div></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo generate</div></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo deploy</div></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;Welcome to &lt;a href=&quot;https://hexo.io/&quot;&gt;Hexo&lt;/a&gt;! This is your very first post. Check &lt;a href=&quot;https://hexo.io/docs/&quot;&gt;documentation&lt;/a&gt; for more info. If you get any problems when using Hexo, you can find the answer in &lt;a href=&quot;https://hexo.io/docs/troubleshooting.html&quot;&gt;troubleshooting&lt;/a&gt; or you can ask me on &lt;a href=&quot;https://github.com/hexojs/hexo/issues&quot;&gt;GitHub&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;Quick-Start&quot;&gt;&lt;a href=&quot;#Quick-Start&quot; class=&quot;headerlink&quot; title=&quot;Quick Start&quot;&gt;&lt;/a&gt;Quick Start&lt;/h2&gt;
+    
+    </summary>
+    
+    
+  </entry>
+  
+</feed>
