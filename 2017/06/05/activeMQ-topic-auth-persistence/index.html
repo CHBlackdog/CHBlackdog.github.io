@@ -1,0 +1,867 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="后台,ActiveMQ," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="CHBlackdog-翦" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="ActiveMQ默认不需要进行权限验证，任何人只要知道地址就可以接收或发送消息，这显然是不安全的。
+权限验证网页控制台的验证可以在jetty-realm.properties文件中修改ActivityMQ的管理页面的访问用户名及密码：123# username: password [,rolename ...]admin: 123456, adminuser: user, user">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ActiveMQ权限验证以及持久化topic">
+<meta property="og:url" content="https://chblackdog.github.io/2017/06/05/activeMQ-topic-auth-persistence/index.html">
+<meta property="og:site_name" content="CHBlackdog-翦">
+<meta property="og:description" content="ActiveMQ默认不需要进行权限验证，任何人只要知道地址就可以接收或发送消息，这显然是不安全的。
+权限验证网页控制台的验证可以在jetty-realm.properties文件中修改ActivityMQ的管理页面的访问用户名及密码：123# username: password [,rolename ...]admin: 123456, adminuser: user, user">
+<meta property="og:updated_time" content="2017-06-05T06:53:12.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ActiveMQ权限验证以及持久化topic">
+<meta name="twitter:description" content="ActiveMQ默认不需要进行权限验证，任何人只要知道地址就可以接收或发送消息，这显然是不安全的。
+权限验证网页控制台的验证可以在jetty-realm.properties文件中修改ActivityMQ的管理页面的访问用户名及密码：123# username: password [,rolename ...]admin: 123456, adminuser: user, user">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: 'T0M4JM9VZ6',
+      apiKey: 'd5c20da1859a38a283f2ebac47a8d26b',
+      indexName: 'Blog_CHBlackdog',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://chblackdog.github.io/2017/06/05/activeMQ-topic-auth-persistence/"/>
+
+
+
+
+
+  <title> ActiveMQ权限验证以及持久化topic | CHBlackdog-翦 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?760d38d4c1e3d4555c7d082753dc3423";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">CHBlackdog-翦</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  
+  <div class="algolia-popup popup">
+    <div class="algolia-search">
+      <div class="algolia-search-input-icon">
+        <i class="fa fa-search"></i>
+      </div>
+      <div class="algolia-search-input" id="algolia-search-input"></div>
+    </div>
+
+    <div class="algolia-results">
+      <div id="algolia-stats"></div>
+      <div id="algolia-hits"></div>
+      <div id="algolia-pagination" class="algolia-pagination"></div>
+    </div>
+
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+  </div>
+
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://chblackdog.github.io/2017/06/05/activeMQ-topic-auth-persistence/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="CHBlackdog">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="CHBlackdog-翦">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                ActiveMQ权限验证以及持久化topic
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-06-05T10:24:02+08:00">
+                2017-06-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ActiveMQ/" itemprop="url" rel="index">
+                    <span itemprop="name">ActiveMQ</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/06/05/activeMQ-topic-auth-persistence/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/06/05/activeMQ-topic-auth-persistence/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>   ActiveMQ默认不需要进行权限验证，任何人只要知道地址就可以接收或发送消息，这显然是不安全的。</p>
+<h2 id="权限验证"><a href="#权限验证" class="headerlink" title="权限验证"></a>权限验证</h2><h3 id="网页控制台的验证"><a href="#网页控制台的验证" class="headerlink" title="网页控制台的验证"></a>网页控制台的验证</h3><p>可以在jetty-realm.properties文件中修改ActivityMQ的管理页面的访问用户名及密码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"># username: password [,rolename ...]</div><div class="line">admin: 123456, admin</div><div class="line">user: user, user</div></pre></td></tr></table></figure></p>
+<a id="more"></a>
+<p>角色可以在jetty.xml中添加，具体不赘述。</p>
+<h3 id="Borker连接安全性"><a href="#Borker连接安全性" class="headerlink" title="Borker连接安全性"></a>Borker连接安全性</h3><h4 id="简单的账号密码实现"><a href="#简单的账号密码实现" class="headerlink" title="简单的账号密码实现"></a>简单的账号密码实现</h4><p>第一种办法设置简单的用户名与密码来拦截所有的请求，无法控制具体的主题队列</p>
+<ol>
+<li>在credentials.properties文件中设置用户名和密码。<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">activemq.username=system</div><div class="line">activemq.password=manager</div><div class="line">user.username=shuluan</div><div class="line">user.password=123456</div><div class="line">guest.password=password</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>通过credentials-enc.properties可以对用户名密码进行加密，参考官方文档地址：<a href="http://activemq.apache.org/encrypted-passwords.html" target="_blank" rel="external">http://activemq.apache.org/encrypted-passwords.html</a></p>
+<ol>
+<li>在activemq.xml文件systemUsage标签之前加上<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">&lt;plugins&gt;</div><div class="line">　　&lt;simpleAuthenticationPlugin&gt;</div><div class="line">　　　　&lt;users&gt;</div><div class="line">	　　&lt;authenticationUser username=&quot;$&#123;activemq.username&#125;&quot; password=&quot;$&#123;activemq.password&#125;&quot; groups=&quot;users,admins&quot;/&gt;</div><div class="line">	　　&lt;authenticationUser username=&quot;$&#123;user.username&#125;&quot; password=&quot;$&#123;user.password&#125;&quot; groups=&quot;users&quot;/&gt;</div><div class="line">	　　&lt;authenticationUser username=&quot;guest&quot; password=&quot;$&#123;guest.password&#125;&quot; groups=&quot;guests&quot;/&gt;</div><div class="line">　　　　&lt;/users&gt;</div><div class="line">　　&lt;/simpleAuthenticationPlugin&gt;</div><div class="line">&lt;/plugins&gt; </div><div class="line">&lt;!-- 加载属性配置文件 --&gt;</div><div class="line">&lt;bean class=&quot;org.springframework.beans.factory.config.PropertyPlaceholderConfigurer&quot;&gt;</div><div class="line">	 &lt;property name=&quot;locations&quot;&gt;</div><div class="line">		&lt;value&gt;file:///$&#123;activemq.base&#125;/conf/credentials.properties&lt;/value&gt;</div><div class="line">	 &lt;/property&gt;      </div><div class="line">  &lt;/bean&gt;</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h4 id="队列-主题级别的权限控制"><a href="#队列-主题级别的权限控制" class="headerlink" title="队列/主题级别的权限控制"></a><strong>队列/主题级别的权限控制</strong></h4><ol>
+<li>在activemq.xml文件systemUsage标签之前加上<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line">&lt;plugins&gt;</div><div class="line">	&lt;!--</div><div class="line">  	use JAAS to authenticate using the login.config file on the classpath to configure JAAS</div><div class="line">	--&gt;</div><div class="line">	&lt;jaasAuthenticationPlugin configuration=&quot;activemq&quot;/&gt;</div><div class="line">	</div><div class="line">	&lt;!-- lets configure a destination based authorization mechanism --&gt;</div><div class="line">	&lt;authorizationPlugin&gt;</div><div class="line">		&lt;map&gt;</div><div class="line">			&lt;authorizationMap&gt;</div><div class="line">				&lt;authorizationEntries&gt;</div><div class="line">					&lt;authorizationEntry queue=&quot;&gt;&quot; read=&quot;admins&quot; write=&quot;admins&quot; admin=&quot;admins&quot;/&gt;</div><div class="line">					&lt;authorizationEntry queue=&quot;QUEUE.LOCAL_SERVICE.&gt;&quot; read=&quot;local-service-users&quot; write=&quot;local-service-users&quot; admin=&quot;local-service-users&quot;/&gt;</div><div class="line">					&lt;authorizationEntry topic=&quot;&gt;&quot; read=&quot;admins&quot; write=&quot;admins&quot; admin=&quot;admins&quot;/&gt;</div><div class="line">					&lt;authorizationEntry topic=&quot;TOPIC.LOCAL_SERVICE.&gt;&quot; read=&quot;local-service-users&quot; write=&quot;local-service-users&quot; admin=&quot;local-service-users&quot;/&gt;</div><div class="line">					&lt;authorizationEntry topic=&quot;ActiveMQ.Advisory.&gt;&quot; read=&quot;admins,local-service-users&quot; write=&quot;admins,local-service-users&quot; admin=&quot;admins,local-service-users&quot;/&gt;</div><div class="line">				&lt;/authorizationEntries&gt;</div><div class="line">&lt;!--</div><div class="line"> let&apos;s assign roles to temporary destinations. comment this entry if we don&apos;t want any roles assigned to temp destinations</div><div class="line">--&gt;</div><div class="line">				&lt;tempDestinationAuthorizationEntry&gt;</div><div class="line">					&lt;tempDestinationAuthorizationEntry read=&quot;tempDestinationAdmins&quot; write=&quot;tempDestinationAdmins&quot; admin=&quot;tempDestinationAdmins&quot;/&gt;</div><div class="line">				&lt;/tempDestinationAuthorizationEntry&gt;</div><div class="line">				&lt;/authorizationMap&gt;</div><div class="line">			&lt;/map&gt;</div><div class="line">		&lt;/authorizationPlugin&gt;</div><div class="line">&lt;/plugins&gt;</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>关键看这句：<br>    <authorizationentry topic="TOPIC.LOCAL_SERVICE.>" read="local-service-users" write="local-service-users" admin="local-service-users"><br>topic=”TOPIC.LOCAL_SERVICE.&gt; 表示所有以TOPIC.LOCAL_SERVICE.开头的topic适用此规则，后面是三种权限及对应的权限组：read,write,admin</authorizationentry></p>
+<ol>
+<li><p>权限组在groups.properties文件中设置：用户组=用户1,用户2…</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">admins=admin</div><div class="line">local-service-users=test</div></pre></td></tr></table></figure>
+</li>
+<li><p>在user.properties中设置用户名和密码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">admin=admin</div><div class="line">test=123456</div></pre></td></tr></table></figure>
+</li>
+<li><p>在login.config文件中指定user.properties及groups.properties</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">activemq &#123;</div><div class="line">    org.apache.activemq.jaas.PropertiesLoginModule required</div><div class="line">        org.apache.activemq.jaas.properties.user=&quot;users.properties&quot;</div><div class="line">        org.apache.activemq.jaas.properties.group=&quot;groups.properties&quot;;</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+</li>
+<li><p>最后在spring中设置用户名密码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">spring.activemq.user=test</div><div class="line">spring.activemq.password=123456</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h3><p>注意在配置过程中如果启动ActiveMQ出现：activemq javax.security.auth.login.LoginException: 没有为 activemq-domain 配置LoginModules。<br>那是因为activemq.xml文件中<jaasauthenticationplugin configuration="activemq"><br>configuration指定的名字(activemq)与conf/login.config文件中的名称不一致造成的。</jaasauthenticationplugin></p>
+<h2 id="spring-boot中topic持久化订阅用法"><a href="#spring-boot中topic持久化订阅用法" class="headerlink" title="spring-boot中topic持久化订阅用法"></a>spring-boot中topic持久化订阅用法</h2><p>spring-boot中利用@JmsListener<br>监听消息，queue默认设置是持久化的，topic的持久化订阅需要设置：</p>
+<ol>
+<li><p>手动设置jmsListenerContainerFactory</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Autowired</span></div><div class="line">ConnectionFactory connectionFactory;<span class="comment">//载入系统默认ConnectionFactory</span></div><div class="line"></div><div class="line"><span class="meta">@Bean</span></div><div class="line"><span class="function"><span class="keyword">public</span> DefaultJmsListenerContainerFactory <span class="title">jmsListenerContainerFactory</span><span class="params">()</span> </span>&#123;</div><div class="line">    DefaultJmsListenerContainerFactory factory = <span class="keyword">new</span> DefaultJmsListenerContainerFactory();</div><div class="line">    factory.setConnectionFactory(connectionFactory);</div><div class="line">    factory.setSubscriptionDurable(<span class="keyword">true</span>);<span class="comment">//设置持久化订阅</span></div><div class="line">    factory.setClientId(<span class="string">"Client-A"</span>);<span class="comment">//必须设置client-id</span></div><div class="line">    factory.setPubSubDomain(<span class="keyword">true</span>);<span class="comment">//设置模式为发布-订阅模式</span></div><div class="line">    <span class="keyword">return</span> factory;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>设置监听</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">*/**</div><div class="line"> * **@param** cfgMap</div><div class="line"> */*</div><div class="line">@JmsListener(containerFactory = &quot;jmsListenerContainerFactory&quot;,subscription = &quot;topic_1&quot;,destination = &quot;TOPIC.LOCAL_SERVICE.CONFIG&quot;)</div><div class="line">public void receiveData(Map&lt;String,String&gt; data)&#123;</div><div class="line">    System.out.println(&quot;LocalServiceCfg received:&quot; + data);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>subscription必须设置，不同的subscription可以订阅不同的topic消息</p>
+<h3 id="另外如果要发送或接受特定类型的数据，必须设置"><a href="#另外如果要发送或接受特定类型的数据，必须设置" class="headerlink" title="另外如果要发送或接受特定类型的数据，必须设置"></a>另外如果要发送或接受特定类型的数据，必须设置</h3><pre><code>spring.activemq.packages.trusted=java.util,java.lang 
+</code></pre>
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/后台/" rel="tag"># 后台</a>
+          
+            <a href="/tags/ActiveMQ/" rel="tag"># ActiveMQ</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/19/springboot-annotation/" rel="next" title="springboot常用注解">
+                <i class="fa fa-chevron-left"></i> springboot常用注解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <div class="ds-share flat" data-thread-key="2017/06/05/activeMQ-topic-auth-persistence/"
+     data-title="ActiveMQ权限验证以及持久化topic"
+     data-content=""
+     data-url="https://chblackdog.github.io/2017/06/05/activeMQ-topic-auth-persistence/">
+  <div class="ds-share-inline">
+    <ul  class="ds-share-icons-16">
+
+      <li data-toggle="ds-share-icons-more"><a class="ds-more" href="javascript:void(0);">分享到：</a></li>
+      <li><a class="ds-weibo" href="javascript:void(0);" data-service="weibo">微博</a></li>
+      <li><a class="ds-qzone" href="javascript:void(0);" data-service="qzone">QQ空间</a></li>
+      <li><a class="ds-qqt" href="javascript:void(0);" data-service="qqt">腾讯微博</a></li>
+      <li><a class="ds-wechat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+
+    </ul>
+    <div class="ds-share-icons-more">
+    </div>
+  </div>
+</div>
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2017/06/05/activeMQ-topic-auth-persistence/"
+           data-title="ActiveMQ权限验证以及持久化topic" data-url="https://chblackdog.github.io/2017/06/05/activeMQ-topic-auth-persistence/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="CHBlackdog" />
+          <p class="site-author-name" itemprop="name">CHBlackdog</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#权限验证"><span class="nav-number">1.</span> <span class="nav-text">权限验证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#网页控制台的验证"><span class="nav-number">1.1.</span> <span class="nav-text">网页控制台的验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Borker连接安全性"><span class="nav-number">1.2.</span> <span class="nav-text">Borker连接安全性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#简单的账号密码实现"><span class="nav-number">1.2.1.</span> <span class="nav-text">简单的账号密码实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#队列-主题级别的权限控制"><span class="nav-number">1.2.2.</span> <span class="nav-text">队列/主题级别的权限控制</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#注意"><span class="nav-number">1.3.</span> <span class="nav-text">注意</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#spring-boot中topic持久化订阅用法"><span class="nav-number">2.</span> <span class="nav-text">spring-boot中topic持久化订阅用法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#另外如果要发送或接受特定类型的数据，必须设置"><span class="nav-number">2.1.</span> <span class="nav-text">另外如果要发送或接受特定类型的数据，必须设置</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2016 - 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">CHBlackdog</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chblackdog"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/algolia-instant-search/instantsearch.min.css">
+
+  
+  
+  <script src="/lib/algolia-instant-search/instantsearch.min.js"></script>
+  
+
+  <script src="/js/src/algolia-search.js?v=5.1.0"></script>
+
+
+
+  
+
+</body>
+</html>

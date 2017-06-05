@@ -1,0 +1,843 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Maven,Pom," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="CHBlackdog-翦" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="本文只列出自己理解的pom文件中常用的一些标签的含义，Maven的内部运行原理可以参考这篇文章：maven内部运行原理解析(一)。根据Mavan官网的POM Reference,Pom文件基本上可以有以下这些元素：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="maven用法-pom文件下各个元素的解释">
+<meta property="og:url" content="https://chblackdog.github.io/2017/05/17/maven-elements/index.html">
+<meta property="og:site_name" content="CHBlackdog-翦">
+<meta property="og:description" content="本文只列出自己理解的pom文件中常用的一些标签的含义，Maven的内部运行原理可以参考这篇文章：maven内部运行原理解析(一)。根据Mavan官网的POM Reference,Pom文件基本上可以有以下这些元素：">
+<meta property="og:updated_time" content="2017-05-17T08:44:26.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="maven用法-pom文件下各个元素的解释">
+<meta name="twitter:description" content="本文只列出自己理解的pom文件中常用的一些标签的含义，Maven的内部运行原理可以参考这篇文章：maven内部运行原理解析(一)。根据Mavan官网的POM Reference,Pom文件基本上可以有以下这些元素：">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: 'T0M4JM9VZ6',
+      apiKey: 'd5c20da1859a38a283f2ebac47a8d26b',
+      indexName: 'Blog_CHBlackdog',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://chblackdog.github.io/2017/05/17/maven-elements/"/>
+
+
+
+
+
+  <title> maven用法-pom文件下各个元素的解释 | CHBlackdog-翦 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?760d38d4c1e3d4555c7d082753dc3423";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">CHBlackdog-翦</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  
+  <div class="algolia-popup popup">
+    <div class="algolia-search">
+      <div class="algolia-search-input-icon">
+        <i class="fa fa-search"></i>
+      </div>
+      <div class="algolia-search-input" id="algolia-search-input"></div>
+    </div>
+
+    <div class="algolia-results">
+      <div id="algolia-stats"></div>
+      <div id="algolia-hits"></div>
+      <div id="algolia-pagination" class="algolia-pagination"></div>
+    </div>
+
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+  </div>
+
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://chblackdog.github.io/2017/05/17/maven-elements/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="CHBlackdog">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="CHBlackdog-翦">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                maven用法-pom文件下各个元素的解释
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-17T11:11:36+08:00">
+                2017-05-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Maven/" itemprop="url" rel="index">
+                    <span itemprop="name">Maven</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/05/17/maven-elements/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/05/17/maven-elements/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文只列出自己理解的pom文件中常用的一些标签的含义，Maven的内部运行原理可以参考这篇文章：<a href="http://www.jianshu.com/p/0fb5e3fb704d" target="_blank" rel="external"><strong><strong>maven内部运行原理解析(一)</strong></strong></a>。<br>根据Mavan官网的<a href="http://maven.apache.org/pom.html#Quick_Overview" target="_blank" rel="external">POM Reference</a>,Pom文件基本上可以有以下这些元素：</p>
+<a id="more"></a>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div></pre></td><td class="code"><pre><div class="line">&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot;</div><div class="line"> xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</div><div class="line"> xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0</div><div class="line">                     http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;</div><div class="line"> &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;</div><div class="line"> </div><div class="line"> &lt;!-- The Basics --&gt;</div><div class="line"> &lt;groupId&gt;...&lt;/groupId&gt;</div><div class="line"> &lt;artifactId&gt;...&lt;/artifactId&gt;</div><div class="line"> &lt;version&gt;...&lt;/version&gt;</div><div class="line"> &lt;packaging&gt;...&lt;/packaging&gt;</div><div class="line"> &lt;dependencies&gt;...&lt;/dependencies&gt;</div><div class="line"> &lt;parent&gt;...&lt;/parent&gt;</div><div class="line"> &lt;dependencyManagement&gt;...&lt;/dependencyManagement&gt;</div><div class="line"> &lt;modules&gt;...&lt;/modules&gt;</div><div class="line"> &lt;properties&gt;...&lt;/properties&gt;</div><div class="line"> </div><div class="line"> &lt;!-- Build Settings --&gt;</div><div class="line"> &lt;build&gt;...&lt;/build&gt;</div><div class="line"> &lt;reporting&gt;...&lt;/reporting&gt;</div><div class="line"> </div><div class="line"> &lt;!-- More Project Information --&gt;</div><div class="line"> &lt;name&gt;...&lt;/name&gt;</div><div class="line"> &lt;description&gt;...&lt;/description&gt;</div><div class="line"> &lt;url&gt;...&lt;/url&gt;</div><div class="line"> &lt;inceptionYear&gt;...&lt;/inceptionYear&gt;</div><div class="line"> &lt;licenses&gt;...&lt;/licenses&gt;</div><div class="line"> &lt;organization&gt;...&lt;/organization&gt;</div><div class="line"> &lt;developers&gt;...&lt;/developers&gt;</div><div class="line"> &lt;contributors&gt;...&lt;/contributors&gt;</div><div class="line"> </div><div class="line"> &lt;!-- Environment Settings --&gt;</div><div class="line"> &lt;issueManagement&gt;...&lt;/issueManagement&gt;</div><div class="line"> &lt;ciManagement&gt;...&lt;/ciManagement&gt;</div><div class="line"> &lt;mailingLists&gt;...&lt;/mailingLists&gt;</div><div class="line"> &lt;scm&gt;...&lt;/scm&gt;</div><div class="line"> &lt;prerequisites&gt;...&lt;/prerequisites&gt;</div><div class="line"> &lt;repositories&gt;...&lt;/repositories&gt;</div><div class="line"> &lt;pluginRepositories&gt;...&lt;/pluginRepositories&gt;</div><div class="line"> &lt;distributionManagement&gt;...&lt;/distributionManagement&gt;</div><div class="line"> &lt;profiles&gt;...&lt;/profiles&gt;</div></pre></td></tr></table></figure>
+<h3 id="基本元素"><a href="#基本元素" class="headerlink" title="基本元素"></a>基本元素</h3><h4 id="groupId-artifactId-version"><a href="#groupId-artifactId-version" class="headerlink" title="groupId/artifactId/version"></a>groupId/artifactId/version</h4><p>这三个是最基本的配置项，用于标记一个project，</p>
+<ul>
+<li>groupId:组织名称，如org.apache</li>
+<li>artifactId:模块名</li>
+<li>version:版本号<h4 id="packaging"><a href="#packaging" class="headerlink" title="packaging"></a>packaging</h4>项目类型，表示最终会输出什么。可以是：jar、war、rar、ear、pom；默认是jar。<h4 id="modules"><a href="#modules" class="headerlink" title="modules"></a>modules</h4>包含子项目<h4 id="parent"><a href="#parent" class="headerlink" title="parent"></a>parent</h4>父项目<h4 id="dependency"><a href="#dependency" class="headerlink" title="dependency"></a>dependency</h4>在dependencies下<br>除groupId/artifactId/version之外还可以有以下配置：</li>
+<li><type></type></li>
+<li><optional></optional>:true/false:设置依赖是否可选</li>
+<li><exclusions>  :排除依赖<br>  <exclusion><br>  </exclusion><br></exclusions></li>
+<li><scope>…</scope>表示当前依赖范围控制：<br><strong><strong>compile （编译范围）</strong></strong><br>compile是默认的范围；如果没有提供一个范围，那该依赖的范围就是编译范围。编译范围依赖在所有的classpath 中可用，同时它们也会被打包。<br><strong><strong>provided （已提供范围）</strong></strong><br>provided 依赖只有在当JDK 或者一个容器已提供该依赖之后才使用。例如， 如果你开发了一个web 应用，你可能在编译 classpath 中需要可用的Servlet API 来编译一个servlet，但是你不会想要在打包好的WAR 中包含这个Servlet API；这个Servlet API JAR 由你的应用服务器或者servlet 容器提供。已提供范围的依赖在编译classpath （不是运行时）可用。它们不是传递性的，也不会被打包。<br><strong><strong>runtime （运行时范围）</strong></strong><br>runtime 依赖在运行和测试系统的时候需要，但在编译的时候不需要。比如，你可能在编译的时候只需要JDBC API JAR，而只有在运行的时候才需要JDBC<br>驱动实现。<br><strong><strong>test （测试范围）</strong></strong><br>test范围依赖 在一般的编译和运行时都不需要，它们只有在测试编译和测试运行阶段可用。<br><strong><strong>system （系统范围）</strong></strong><br>system范围依赖与provided 类似，但是你必须显式的提供一个对于本地系统中JAR 文件的路径。这么做是为了允许基于本地对象编译，而这些对象是系统类库的一部分。这样的构件应该是一直可用的，Maven 也不会在仓库中去寻找它。如果你将一个依赖范围设置成系统范围，你必须同时提供一个 systemPath 元素。注意该范围是不推荐使用的（你应该一直尽量去从公共或定制的 Maven 仓库中引用依赖）。<br><strong><strong>import （导入的范围）</strong></strong><br>他只用在dependencyManagement中，表示从其他的pom中导入dependency的配置<h4 id="dependencyManagement"><a href="#dependencyManagement" class="headerlink" title="dependencyManagement"></a>dependencyManagement</h4>dependencyManagement里只是声明依赖，并不实现引入，因此子项目需要显示的声明需要用的依赖。如果不在子项目中声明依赖，是不会从父项目中继承下来的；只有在子项目中写了该依赖项，并且没有指定具体版本，才会从父项目中继承该项，并且version和scope都读取自父pom;另外如果子项目中指定了版本号，那么会使用子项目中指定的jar版本。</li>
+</ul>
+<h3 id="Build设置"><a href="#Build设置" class="headerlink" title="Build设置"></a>Build设置</h3><h4 id="plugins-plugin"><a href="#plugins-plugin" class="headerlink" title="plugins/plugin"></a>plugins/plugin</h4><h3 id="Project信息"><a href="#Project信息" class="headerlink" title="Project信息"></a>Project信息</h3><h4 id="name"><a href="#name" class="headerlink" title="name"></a>name</h4><p>项目描述名</p>
+<h4 id="url"><a href="#url" class="headerlink" title="url"></a>url</h4><p>项目地址</p>
+<h3 id="环境配置"><a href="#环境配置" class="headerlink" title="环境配置"></a>环境配置</h3><h3 id="依赖冲突"><a href="#依赖冲突" class="headerlink" title="依赖冲突"></a>依赖冲突</h3><p>几种情况：</p>
+<ul>
+<li>短路径优先</li>
+<li>路径长度相同，则先声明先优先</li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Maven/" rel="tag"># Maven</a>
+          
+            <a href="/tags/Pom/" rel="tag"># Pom</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/14/android-source-complie/" rel="next" title="Mac下获取并编译Android M源码">
+                <i class="fa fa-chevron-left"></i> Mac下获取并编译Android M源码
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/05/17/maven-command/" rel="prev" title="maven常用命令解释">
+                maven常用命令解释 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <div class="ds-share flat" data-thread-key="2017/05/17/maven-elements/"
+     data-title="maven用法-pom文件下各个元素的解释"
+     data-content=""
+     data-url="https://chblackdog.github.io/2017/05/17/maven-elements/">
+  <div class="ds-share-inline">
+    <ul  class="ds-share-icons-16">
+
+      <li data-toggle="ds-share-icons-more"><a class="ds-more" href="javascript:void(0);">分享到：</a></li>
+      <li><a class="ds-weibo" href="javascript:void(0);" data-service="weibo">微博</a></li>
+      <li><a class="ds-qzone" href="javascript:void(0);" data-service="qzone">QQ空间</a></li>
+      <li><a class="ds-qqt" href="javascript:void(0);" data-service="qqt">腾讯微博</a></li>
+      <li><a class="ds-wechat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+
+    </ul>
+    <div class="ds-share-icons-more">
+    </div>
+  </div>
+</div>
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+  <p>热评文章</p>
+  <div class="ds-top-threads" data-range="weekly" data-num-items="4"></div>
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2017/05/17/maven-elements/"
+           data-title="maven用法-pom文件下各个元素的解释" data-url="https://chblackdog.github.io/2017/05/17/maven-elements/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="CHBlackdog" />
+          <p class="site-author-name" itemprop="name">CHBlackdog</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+        
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">8</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#基本元素"><span class="nav-number">1.</span> <span class="nav-text">基本元素</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#groupId-artifactId-version"><span class="nav-number">1.1.</span> <span class="nav-text">groupId/artifactId/version</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#packaging"><span class="nav-number">1.2.</span> <span class="nav-text">packaging</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#modules"><span class="nav-number">1.3.</span> <span class="nav-text">modules</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#parent"><span class="nav-number">1.4.</span> <span class="nav-text">parent</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#dependency"><span class="nav-number">1.5.</span> <span class="nav-text">dependency</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#dependencyManagement"><span class="nav-number">1.6.</span> <span class="nav-text">dependencyManagement</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Build设置"><span class="nav-number">2.</span> <span class="nav-text">Build设置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#plugins-plugin"><span class="nav-number">2.1.</span> <span class="nav-text">plugins/plugin</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Project信息"><span class="nav-number">3.</span> <span class="nav-text">Project信息</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#name"><span class="nav-number">3.1.</span> <span class="nav-text">name</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#url"><span class="nav-number">3.2.</span> <span class="nav-text">url</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#环境配置"><span class="nav-number">4.</span> <span class="nav-text">环境配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#依赖冲突"><span class="nav-number">5.</span> <span class="nav-text">依赖冲突</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy;  2016 - 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">CHBlackdog</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"chblackdog"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+  
+  <link rel="stylesheet" href="/lib/algolia-instant-search/instantsearch.min.css">
+
+  
+  
+  <script src="/lib/algolia-instant-search/instantsearch.min.js"></script>
+  
+
+  <script src="/js/src/algolia-search.js?v=5.1.0"></script>
+
+
+
+  
+
+</body>
+</html>
